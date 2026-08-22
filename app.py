@@ -304,64 +304,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-# Guest Account
-
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-if "is_guest" not in st.session_state:
-    st.session_state.is_guest = False
-
-if "user_name" not in st.session_state:
-    st.session_state.user_name = ""
-
-
-def guest_login():
-    st.session_state.logged_in = True
-    st.session_state.is_guest = True
-    st.session_state.user_name = "Guest User"
-    st.session_state.user_email = "guest@aicareernavigator.app"
-
-
-if not st.session_state.logged_in:
-
-    st.subheader("👥 Guest Account")
-
-    st.write(
-        "Continue as a guest without creating an account."
-    )
-
-    if st.button("👥 Continue as Guest", use_container_width=True):
-        guest_login()
-        st.rerun()
-
-    st.stop()
-
-
-# Guest Account Information
-if st.session_state.is_guest:
-
-    st.sidebar.success("👥 Guest Account")
-
-    st.sidebar.write(
-        f"Welcome, {st.session_state.user_name}"
-    )
-
-    st.sidebar.info(
-        "Guest data is temporary and will not be permanently saved."
-    )
-# ============================================================
-# SESSION STATE
-# ============================================================
-
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-if "user_id" not in st.session_state:
-    st.session_state.user_id = None
-
-if "user_name" not in st.session_state:
-    st.session_state.user_name = ""
 
 
 # ============================================================
