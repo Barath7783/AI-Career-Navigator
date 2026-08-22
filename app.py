@@ -7,7 +7,6 @@ from google import genai
 # AI CAREER NAVIGATOR
 # ============================================================
 
-# Page configuration
 st.set_page_config(
     page_title="AI Career Navigator",
     page_icon="🚀",
@@ -23,15 +22,10 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    st.error(
-        "❌ Gemini API key not found. "
-        "Please add GEMINI_API_KEY to your .env file."
-    )
+    st.error("❌ Gemini API key not found. Please add GEMINI_API_KEY to your .env file.")
     st.stop()
 
-# Initialize Gemini
 client = genai.Client(api_key=api_key)
-
 
 # ============================================================
 # HEADER
@@ -39,33 +33,36 @@ client = genai.Client(api_key=api_key)
 
 st.markdown(
     """
-    <div style="text-align: center; padding: 10px 0 20px 0;">
+    <div style="text-align:center; padding:20px 0;">
+
         <h1 style="
-            font-size: 48px;
-            font-weight: 800;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #ff4b4b, #a855f7, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size:48px;
+            font-weight:800;
+            margin:0;
+            background:linear-gradient(90deg,#ff4b4b,#a855f7,#3b82f6);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
         ">
             🚀 AI CAREER NAVIGATOR 🧭
         </h1>
 
         <h2 style="
-            color: #00d9ff;
-            font-size: 28px;
-            font-weight: 700;
-            margin-top: 0;
+            color:#00d9ff;
+            font-size:28px;
+            font-weight:700;
+            margin:10px 0;
         ">
             REVERSE 2026
         </h2>
 
         <p style="
-            font-size: 22px;
-            color: #d1d5db;
+            font-size:22px;
+            color:#d1d5db;
+            margin-top:10px;
         ">
             Your AI-Powered Career Planning Assistant
         </p>
+
     </div>
     """,
     unsafe_allow_html=True
@@ -74,12 +71,12 @@ st.markdown(
 st.markdown(
     """
     <div style="
-        text-align: center;
-        font-size: 16px;
-        color: #b8c0cc;
-        margin-bottom: 25px;
+        text-align:center;
+        font-size:16px;
+        color:#b8c0cc;
+        margin-bottom:25px;
     ">
-        <b>AI Career Navigator</b> analyzes your education, skills,
+        AI Career Navigator analyzes your education, skills,
         interests and career goals to create a personalized career roadmap.
     </div>
     """,
@@ -87,7 +84,6 @@ st.markdown(
 )
 
 st.divider()
-
 
 # ============================================================
 # SIDEBAR
@@ -115,7 +111,6 @@ st.sidebar.markdown(
     - 🚀 Future Career Plan
     """
 )
-
 
 # ============================================================
 # USER INPUT
@@ -178,7 +173,6 @@ with col2:
         placeholder="Example: AI Engineer"
     )
 
-
 # ============================================================
 # EXPERIENCE LEVEL
 # ============================================================
@@ -194,9 +188,8 @@ experience_level = st.selectbox(
     ]
 )
 
-
 # ============================================================
-# PREFERRED CAREER DOMAIN
+# CAREER DOMAIN
 # ============================================================
 
 career_domain = st.selectbox(
@@ -216,9 +209,8 @@ career_domain = st.selectbox(
     ]
 )
 
-
 # ============================================================
-# GENERATE CAREER REPORT
+# GENERATE REPORT
 # ============================================================
 
 generate_report = st.button(
@@ -227,10 +219,8 @@ generate_report = st.button(
     use_container_width=True
 )
 
-
 if generate_report:
 
-    # Validate inputs
     if not education.strip():
         st.warning("⚠️ Please enter your education details.")
         st.stop()
@@ -243,15 +233,10 @@ if generate_report:
         st.warning("⚠️ Please enter your career goal.")
         st.stop()
 
-    # ========================================================
-    # PROMPT
-    # ========================================================
-
     prompt = f"""
 You are an expert AI Career Advisor and Technology Career Strategist.
 
-Create a detailed but practical career plan based on the following
-candidate profile.
+Create a detailed but practical career plan based on the following candidate profile.
 
 Candidate Name:
 {name}
@@ -279,84 +264,25 @@ Preferred Career Domain:
 
 Generate a professional AI Career Navigation Report.
 
-The report must contain the following sections:
+The report must contain:
 
 1. Career Assessment
-   - Current profile
-   - Career readiness
-   - Strengths
-
 2. Recommended Career Roles
-   - Recommend 5 suitable job roles
-   - Explain why each role is suitable
-   - Give an approximate difficulty level
-
 3. Skill Gap Analysis
-   - Existing skills
-   - Missing skills
-   - Priority of each missing skill
-
 4. Technical Skills Roadmap
-   - Programming
-   - AI/ML
-   - Generative AI
-   - Frameworks
-   - Databases
-   - Cloud
-   - Deployment
-   - Git/GitHub
-
 5. 6-Month Learning Roadmap
-   Month 1
-   Month 2
-   Month 3
-   Month 4
-   Month 5
-   Month 6
-
 6. Project Recommendations
-   - Beginner project
-   - Intermediate project
-   - Advanced project
-   - One strong portfolio project
-
 7. Resume Recommendations
-   - Skills to highlight
-   - Projects to highlight
-   - Certifications
-   - ATS recommendations
-
 8. Interview Preparation
-   - Technical topics
-   - Coding topics
-   - AI/ML questions
-   - HR questions
-
 9. Job Search Strategy
-   - Suitable job titles
-   - Types of companies
-   - LinkedIn strategy
-   - GitHub strategy
-   - Portfolio strategy
-
 10. Long-Term Career Roadmap
-   - 1 year
-   - 3 years
-   - 5 years
-
 11. Final Recommendation
-   Give a clear conclusion about the candidate's best career direction.
 
 Keep the advice realistic, practical and suitable for the candidate's
 current experience level.
 
 Use clear headings and bullet points.
 """
-
-
-    # ========================================================
-    # CALL GEMINI
-    # ========================================================
 
     with st.spinner("🤖 AI is analyzing your career profile..."):
 
@@ -372,26 +298,14 @@ Use clear headings and bullet points.
         except Exception as e:
 
             st.error("❌ Error while generating the career report.")
-
             st.exception(e)
-
             st.stop()
-
-
-    # ========================================================
-    # DISPLAY REPORT
-    # ========================================================
 
     st.divider()
 
     st.header("📊 Your AI Career Navigation Report")
 
     st.markdown(result)
-
-
-    # ========================================================
-    # DOWNLOAD REPORT
-    # ========================================================
 
     st.divider()
 
@@ -404,7 +318,6 @@ Use clear headings and bullet points.
         mime="text/plain"
     )
 
-
 # ============================================================
 # FOOTER
 # ============================================================
@@ -414,10 +327,10 @@ st.divider()
 st.markdown(
     """
     <div style="
-        text-align: center;
-        padding: 20px 0;
-        font-size: 18px;
-        color: white;
+        text-align:center;
+        padding:20px 0;
+        font-size:18px;
+        color:white;
     ">
         © 2026 Barath. All Rights Reserved.
     </div>
