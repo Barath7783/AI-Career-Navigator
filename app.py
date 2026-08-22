@@ -377,3 +377,7 @@ st.divider()
 st.caption(
     "🚀 AI Career Navigator | Built with Python, Streamlit and Google Gemini"
 )
+st.markdown(
+    "<p style='text-align:center;'>© 2026 Barath. All Rights Reserved.</p>",
+    unsafe_allow_html=True
+)
