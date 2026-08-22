@@ -304,7 +304,35 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+# ============================================================
+# 👥 GUEST ACCOUNT
+# ============================================================
 
+if "guest_mode" not in st.session_state:
+    st.session_state.guest_mode = False
+
+if st.sidebar.button("👥 Guest Account", use_container_width=True):
+    st.session_state.guest_mode = True
+    st.session_state.user_name = "Guest User"
+    st.session_state.user_email = "guest@aicareernavigator.app"
+    st.rerun()
+
+if st.session_state.guest_mode:
+
+    st.sidebar.success("👥 Guest Account")
+
+    st.sidebar.write("Welcome, Guest User")
+
+    st.sidebar.caption(
+        "Guest mode allows you to explore AI Career Navigator "
+        "without creating an account."
+    )
+
+    if st.sidebar.button("🚪 Exit Guest Account", use_container_width=True):
+        st.session_state.guest_mode = False
+        st.session_state.user_name = ""
+        st.session_state.user_email = ""
+        st.rerun()
 
 # ============================================================
 # LOGIN / SIGNUP
