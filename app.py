@@ -8,7 +8,6 @@ import streamlit as st
 from dotenv import load_dotenv
 from google import genai
 
-
 # ============================================================
 # AI CAREER NAVIGATOR - STARTUP MVP
 # ============================================================
@@ -18,7 +17,6 @@ st.set_page_config(
     page_icon="🧭",
     layout="wide"
 )
-
 
 # ============================================================
 # CONFIGURATION
@@ -36,7 +34,6 @@ client = genai.Client(api_key=API_KEY)
 
 DB_NAME = "career_navigator.db"
 
-
 # ============================================================
 # DATABASE
 # ============================================================
@@ -44,6 +41,7 @@ DB_NAME = "career_navigator.db"
 def init_database():
 
     conn = sqlite3.connect(DB_NAME)
+
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -96,8 +94,6 @@ def init_database():
 
 
 init_database()
-
-
 # ============================================================
 # SESSION STATE INITIALIZATION
 # ============================================================
@@ -113,7 +109,6 @@ if "user_name" not in st.session_state:
 
 if "user_email" not in st.session_state:
     st.session_state.user_email = ""
-
 
 # ============================================================
 # PASSWORD
@@ -149,12 +144,15 @@ def create_user(name, email, password):
         )
 
         conn.commit()
+
         return True
 
     except sqlite3.IntegrityError:
+
         return False
 
     finally:
+
         conn.close()
 
 
@@ -198,6 +196,7 @@ def save_profile(
 ):
 
     conn = sqlite3.connect(DB_NAME)
+
     cursor = conn.cursor()
 
     cursor.execute(
@@ -243,6 +242,7 @@ def save_profile(
 def save_report(user_id, report):
 
     conn = sqlite3.connect(DB_NAME)
+
     cursor = conn.cursor()
 
     cursor.execute(
@@ -320,7 +320,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # ============================================================
 # LOGIN / SIGNUP
 # ============================================================
@@ -343,10 +342,9 @@ if not st.session_state.logged_in:
         ["🔐 Login", "📝 Create Account"]
     )
 
-
-    # ========================================================
+    # --------------------------------------------------------
     # LOGIN
-    # ========================================================
+    # --------------------------------------------------------
 
     with tab1:
 
@@ -366,42 +364,30 @@ if not st.session_state.logged_in:
             use_container_width=True
         ):
 
-            if not email or not password:
+            user = login_user(
+                email,
+                password
+            )
 
-                st.warning(
-                    "Please enter email and password."
-                )
+            if user:
+
+                st.session_state.logged_in = True
+                st.session_state.user_id = user[0]
+                st.session_state.user_name = user[1]
+
+                st.success("✅ Login successful!")
+
+                st.rerun()
 
             else:
 
-                user = login_user(
-                    email,
-                    password
+                st.error(
+                    "❌ Invalid email or password."
                 )
 
-                if user:
-
-                    st.session_state.logged_in = True
-                    st.session_state.user_id = user[0]
-                    st.session_state.user_name = user[1]
-                    st.session_state.user_email = email
-
-                    st.success(
-                        "✅ Login successful!"
-                    )
-
-                    st.rerun()
-
-                else:
-
-                    st.error(
-                        "❌ Invalid email or password."
-                    )
-
-
-    # ========================================================
+    # --------------------------------------------------------
     # SIGN UP
-    # ========================================================
+    # --------------------------------------------------------
 
     with tab2:
 
@@ -423,8 +409,7 @@ if not st.session_state.logged_in:
 
         confirm_password = st.text_input(
             "Confirm Password",
-            type="password",
-            key="confirm_password"
+            type="password"
         )
 
         if st.button(
@@ -442,12 +427,6 @@ if not st.session_state.logged_in:
 
                 st.error(
                     "Passwords do not match."
-                )
-
-            elif len(password) < 6:
-
-                st.warning(
-                    "Password must contain at least 6 characters."
                 )
 
             else:
@@ -497,12 +476,9 @@ page = st.sidebar.radio(
         "💳 Subscription"
     ]
 )
-
 st.sidebar.divider()
 
-st.sidebar.markdown(
-    "### 🔗 Connect with Me"
-)
+st.sidebar.markdown("### 🔗 Connect with Me")
 
 st.sidebar.markdown(
     """
@@ -526,9 +502,10 @@ if st.sidebar.button("🚪 Logout"):
     st.session_state.logged_in = False
     st.session_state.user_id = None
     st.session_state.user_name = ""
-    st.session_state.user_email = ""
 
     st.rerun()
+
+
 
 
 # ============================================================
@@ -754,9 +731,9 @@ elif page == "🤖 AI Career Assessment":
                 "Please enter education, skills and career goal."
             )
 
-        else:
+            st.stop()
 
-            prompt = f"""
+        prompt = f"""
 You are an expert AI Career Advisor.
 
 Candidate:
@@ -799,44 +776,44 @@ Include:
 Make the advice practical and realistic.
 """
 
-            with st.spinner(
-                "🤖 AI is creating your career plan..."
-            ):
+        with st.spinner(
+            "🤖 AI is creating your career plan..."
+        ):
 
-                try:
+            try:
 
-                    response = client.models.generate_content(
-                        model="gemini-3.6-flash",
-                        contents=prompt
-                    )
+                response = client.models.generate_content(
+                    model="gemini-3.6-flash",
+                    contents=prompt
+                )
 
-                    result = response.text
+                result = response.text
 
-                    save_report(
-                        st.session_state.user_id,
-                        result
-                    )
+                save_report(
+                    st.session_state.user_id,
+                    result
+                )
 
-                    st.success(
-                        "✅ Career report generated!"
-                    )
+                st.success(
+                    "✅ Career report generated!"
+                )
 
-                    st.markdown(result)
+                st.markdown(result)
 
-                    st.download_button(
-                        "📥 Download Career Report",
-                        result,
-                        "AI_Career_Navigator_Report.txt",
-                        "text/plain"
-                    )
+                st.download_button(
+                    "📥 Download Career Report",
+                    result,
+                    "AI_Career_Navigator_Report.txt",
+                    "text/plain"
+                )
 
-                except Exception as e:
+            except Exception as e:
 
-                    st.error(
-                        "❌ Error generating report."
-                    )
+                st.error(
+                    "❌ Error generating report."
+                )
 
-                    st.exception(e)
+                st.exception(e)
 
 
 # ============================================================
@@ -875,70 +852,70 @@ elif page == "📄 Resume & ATS":
                 "Please upload your resume."
             )
 
-        else:
+            st.stop()
 
-            resume_text = ""
+        resume_text = ""
 
-            # TXT
-            if uploaded_file.name.endswith(".txt"):
+        # TXT
+        if uploaded_file.name.endswith(".txt"):
 
-                resume_text = (
+            resume_text = (
+                uploaded_file
+                .read()
+                .decode("utf-8", errors="ignore")
+            )
+
+        # PDF
+        elif uploaded_file.name.endswith(".pdf"):
+
+            try:
+
+                from PyPDF2 import PdfReader
+
+                reader = PdfReader(
                     uploaded_file
-                    .read()
-                    .decode("utf-8", errors="ignore")
                 )
 
-            # PDF
-            elif uploaded_file.name.endswith(".pdf"):
+                for page_pdf in reader.pages:
 
-                try:
+                    text = page_pdf.extract_text()
 
-                    from PyPDF2 import PdfReader
+                    if text:
+                        resume_text += text
 
-                    reader = PdfReader(
-                        uploaded_file
-                    )
+            except Exception:
 
-                    for page_pdf in reader.pages:
+                st.error(
+                    "Install PyPDF2 to read PDF files."
+                )
 
-                        text = page_pdf.extract_text()
+                st.stop()
 
-                        if text:
-                            resume_text += text
+        # DOCX
+        elif uploaded_file.name.endswith(".docx"):
 
-                except Exception:
+            try:
 
-                    st.error(
-                        "Install PyPDF2 to read PDF files."
-                    )
+                from docx import Document
 
-                    st.stop()
+                document = Document(
+                    uploaded_file
+                )
 
-            # DOCX
-            elif uploaded_file.name.endswith(".docx"):
+                resume_text = "\n".join(
+                    paragraph.text
+                    for paragraph in document.paragraphs
+                )
 
-                try:
+            except Exception:
 
-                    from docx import Document
+                st.error(
+                    "Install python-docx to read DOCX files."
+                )
 
-                    document = Document(
-                        uploaded_file
-                    )
+                st.stop()
 
-                    resume_text = "\n".join(
-                        paragraph.text
-                        for paragraph in document.paragraphs
-                    )
-
-                except Exception:
-
-                    st.error(
-                        "Install python-docx to read DOCX files."
-                    )
-
-                    st.stop()
-
-            prompt = f"""
+        prompt = f"""
 You are an ATS Resume Expert.
 
 Target Job:
@@ -963,28 +940,18 @@ Give:
 10. Final ATS improvement plan
 """
 
-            with st.spinner(
-                "📄 Analyzing resume..."
-            ):
+        with st.spinner(
+            "📄 Analyzing resume..."
+        ):
 
-                try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
+            )
 
-                    response = client.models.generate_content(
-                        model="gemini-3.6-flash",
-                        contents=prompt
-                    )
+            ats_result = response.text
 
-                    ats_result = response.text
-
-                    st.markdown(ats_result)
-
-                except Exception as e:
-
-                    st.error(
-                        "❌ Error analyzing resume."
-                    )
-
-                    st.exception(e)
+        st.markdown(ats_result)
 
 
 # ============================================================
@@ -1016,15 +983,7 @@ elif page == "💼 Job Matching":
         use_container_width=True
     ):
 
-        if not skills or not job_role or not job_description:
-
-            st.warning(
-                "Please enter your skills, target role and job description."
-            )
-
-        else:
-
-            prompt = f"""
+        prompt = f"""
 You are an AI recruitment specialist.
 
 Candidate skills:
@@ -1049,28 +1008,18 @@ Return:
 7. Overall recommendation
 """
 
-            with st.spinner(
-                "💼 Matching your profile..."
-            ):
+        with st.spinner(
+            "💼 Matching your profile..."
+        ):
 
-                try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
+            )
 
-                    response = client.models.generate_content(
-                        model="gemini-3.6-flash",
-                        contents=prompt
-                    )
-
-                    st.markdown(
-                        response.text
-                    )
-
-                except Exception as e:
-
-                    st.error(
-                        "❌ Error matching job."
-                    )
-
-                    st.exception(e)
+            st.markdown(
+                response.text
+            )
 
 
 # ============================================================
@@ -1097,15 +1046,7 @@ elif page == "📚 Learning Roadmap":
         use_container_width=True
     ):
 
-        if not target_role:
-
-            st.warning(
-                "Please enter your target career."
-            )
-
-        else:
-
-            prompt = f"""
+        prompt = f"""
 Create a personalized learning roadmap.
 
 Target career:
@@ -1132,28 +1073,18 @@ For every month include:
 - Expected outcome
 """
 
-            with st.spinner(
-                "📚 Creating roadmap..."
-            ):
+        with st.spinner(
+            "📚 Creating roadmap..."
+        ):
 
-                try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
+            )
 
-                    response = client.models.generate_content(
-                        model="gemini-3.6-flash",
-                        contents=prompt
-                    )
-
-                    st.markdown(
-                        response.text
-                    )
-
-                except Exception as e:
-
-                    st.error(
-                        "❌ Error generating roadmap."
-                    )
-
-                    st.exception(e)
+            st.markdown(
+                response.text
+            )
 
 
 # ============================================================
@@ -1185,15 +1116,7 @@ elif page == "🎤 Interview Preparation":
         use_container_width=True
     ):
 
-        if not role:
-
-            st.warning(
-                "Please enter the target job role."
-            )
-
-        else:
-
-            prompt = f"""
+        prompt = f"""
 You are an expert technical interviewer.
 
 Job Role:
@@ -1213,28 +1136,18 @@ Generate:
 7. Model answers and preparation tips
 """
 
-            with st.spinner(
-                "🎤 Preparing interview questions..."
-            ):
+        with st.spinner(
+            "🎤 Preparing interview questions..."
+        ):
 
-                try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
+            )
 
-                    response = client.models.generate_content(
-                        model="gemini-3.6-flash",
-                        contents=prompt
-                    )
-
-                    st.markdown(
-                        response.text
-                    )
-
-                except Exception as e:
-
-                    st.error(
-                        "❌ Error generating interview questions."
-                    )
-
-                    st.exception(e)
+            st.markdown(
+                response.text
+            )
 
 
 # ============================================================
@@ -1264,37 +1177,29 @@ elif page == "📈 Progress Tracking":
         "➕ Add Skill"
     ):
 
-        if not skill:
+        conn = sqlite3.connect(DB_NAME)
 
-            st.warning(
-                "Please enter a skill."
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO progress
+            (user_id, skill, status)
+            VALUES (?, ?, ?)
+            """,
+            (
+                st.session_state.user_id,
+                skill,
+                status
             )
+        )
 
-        else:
+        conn.commit()
+        conn.close()
 
-            conn = sqlite3.connect(DB_NAME)
-
-            cursor = conn.cursor()
-
-            cursor.execute(
-                """
-                INSERT INTO progress
-                (user_id, skill, status)
-                VALUES (?, ?, ?)
-                """,
-                (
-                    st.session_state.user_id,
-                    skill,
-                    status
-                )
-            )
-
-            conn.commit()
-            conn.close()
-
-            st.success(
-                "✅ Skill added."
-            )
+        st.success(
+            "✅ Skill added."
+        )
 
     conn = sqlite3.connect(DB_NAME)
 
@@ -1331,23 +1236,11 @@ elif page == "📈 Progress Tracking":
                     f"📚 {skill_name} — {skill_status}"
                 )
 
-            elif skill_status == "Practicing":
-
-                st.warning(
-                    f"🛠️ {skill_name} — {skill_status}"
-                )
-
             else:
 
                 st.write(
                     f"🔹 {skill_name} — {skill_status}"
                 )
-
-    else:
-
-        st.info(
-            "No skills added yet."
-        )
 
 
 # ============================================================
