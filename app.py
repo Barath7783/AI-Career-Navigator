@@ -1,48 +1,47 @@
 import os
+import re
 import sqlite3
 import hashlib
+from datetime import datetime
+
 import streamlit as st
+from dotenv import load_dotenv
+from google import genai
 
 # ============================================================
-# PAGE CONFIGURATION
+# AI CAREER NAVIGATOR - STARTUP MVP
 # ============================================================
 
 st.set_page_config(
     page_title="AI Career Navigator",
-    page_icon="🚀",
+    page_icon="🧭",
     layout="wide"
 )
 
 # ============================================================
-# SESSION STATE INITIALIZATION
-# IMPORTANT: THIS MUST COME BEFORE logged_in IS USED
+# CONFIGURATION
 # ============================================================
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+load_dotenv()
 
-if "user_name" not in st.session_state:
-    st.session_state.user_name = ""
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-if "user_email" not in st.session_state:
-    st.session_state.user_email = ""
+if not API_KEY:
+    st.error("❌ GEMINI_API_KEY not found in .env")
+    st.stop()
 
-if "user_id" not in st.session_state:
-    st.session_state.user_id = None
+client = genai.Client(api_key=API_KEY)
+
+DB_NAME = "career_navigator.db"
 
 # ============================================================
 # DATABASE
 # ============================================================
 
-DB_FILE = "career_navigator.db"
-
-
-def get_connection():
-    return sqlite3.connect(DB_FILE, check_same_thread=False)
-
-
 def init_database():
-    conn = get_connection()
+
+    conn = sqlite3.connect(DB_NAME)
+
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -50,7 +49,8 @@ def init_database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            created_at TEXT NOT NULL
         )
     """)
 
@@ -63,7 +63,29 @@ def init_database():
             interests TEXT,
             experience TEXT,
             career_goal TEXT,
-            career_level TEXT
+            career_level TEXT,
+            career_domain TEXT,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            report TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            skill TEXT,
+            status TEXT,
+            FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
 
@@ -74,65 +96,61 @@ def init_database():
 init_database()
 
 # ============================================================
-# PASSWORD HASH
+# PASSWORD
 # ============================================================
-
 
 def hash_password(password):
-    return hashlib.sha256(
-        password.encode("utf-8")
-    ).hexdigest()
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
 # ============================================================
-# CREATE USER
+# USER ACCOUNT
 # ============================================================
-
 
 def create_user(name, email, password):
 
-    conn = get_connection()
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     try:
+
         cursor.execute(
             """
-            INSERT INTO users(name, email, password)
-            VALUES (?, ?, ?)
+            INSERT INTO users
+            (name, email, password, created_at)
+            VALUES (?, ?, ?, ?)
             """,
             (
                 name,
                 email,
-                hash_password(password)
+                hash_password(password),
+                datetime.now().isoformat()
             )
         )
 
         conn.commit()
+
         return True
 
     except sqlite3.IntegrityError:
+
         return False
 
     finally:
+
         conn.close()
-
-
-# ============================================================
-# LOGIN USER
-# ============================================================
 
 
 def login_user(email, password):
 
-    conn = get_connection()
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute(
         """
-        SELECT id, name, email
+        SELECT id, name
         FROM users
-        WHERE email = ?
-        AND password = ?
+        WHERE email = ? AND password = ?
         """,
         (
             email,
@@ -148,6 +166,88 @@ def login_user(email, password):
 
 
 # ============================================================
+# SAVE PROFILE
+# ============================================================
+
+def save_profile(
+    user_id,
+    education,
+    skills,
+    interests,
+    experience,
+    career_goal,
+    career_level,
+    career_domain
+):
+
+    conn = sqlite3.connect(DB_NAME)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM profiles WHERE user_id = ?",
+        (user_id,)
+    )
+
+    cursor.execute(
+        """
+        INSERT INTO profiles
+        (
+            user_id,
+            education,
+            skills,
+            interests,
+            experience,
+            career_goal,
+            career_level,
+            career_domain
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            education,
+            skills,
+            interests,
+            experience,
+            career_goal,
+            career_level,
+            career_domain
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+
+# ============================================================
+# SAVE REPORT
+# ============================================================
+
+def save_report(user_id, report):
+
+    conn = sqlite3.connect(DB_NAME)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO reports
+        (user_id, report, created_at)
+        VALUES (?, ?, ?)
+        """,
+        (
+            user_id,
+            report,
+            datetime.now().isoformat()
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+
+# ============================================================
 # CUSTOM CSS
 # ============================================================
 
@@ -157,14 +257,14 @@ st.markdown(
 
     .main-title {
         text-align: center;
-        font-size: 52px;
+        font-size: 48px;
         font-weight: 800;
-        margin-top: 20px;
+        margin-top: 10px;
         margin-bottom: 5px;
         background: linear-gradient(
             90deg,
-            #ff4b91,
-            #8b5cf6,
+            #ff4b4b,
+            #a855f7,
             #3b82f6
         );
         -webkit-background-clip: text;
@@ -173,16 +273,31 @@ st.markdown(
 
     .subtitle {
         text-align: center;
-        font-size: 20px;
+        font-size: 26px;
+        font-weight: 700;
+        color: #00d9ff;
+    }
+
+    .description {
+        text-align: center;
+        font-size: 19px;
+        color: #d1d5db;
         margin-bottom: 30px;
+    }
+
+    .feature-card {
+        padding: 20px;
+        border-radius: 15px;
+        background: #171923;
+        border: 1px solid #30323d;
+        margin-bottom: 15px;
     }
 
     .footer {
         text-align: center;
-        margin-top: 60px;
-        padding: 20px;
-        color: #888888;
-        border-top: 1px solid #333333;
+        padding: 30px;
+        font-size: 17px;
+        color: white;
     }
 
     </style>
@@ -190,53 +305,33 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # ============================================================
-# HEADER
+# LOGIN / SIGNUP
 # ============================================================
 
-
-def show_header():
+if not st.session_state.logged_in:
 
     st.markdown(
-        """
-        <div class="main-title">
-            🚀 AI CAREER NAVIGATOR
-        </div>
-
-        <div class="subtitle">
-            Your AI-Powered Career Planning Assistant
-        </div>
-        """,
+        '<div class="main-title">AI CAREER NAVIGATOR</div>',
         unsafe_allow_html=True
     )
 
-
-# ============================================================
-# LOGIN / CREATE ACCOUNT PAGE
-# ============================================================
-
-
-def authentication_page():
-
-    show_header()
-
-    st.markdown("---")
-
-    login_tab, register_tab = st.tabs(
-        [
-            "🔐 Login",
-            "📝 Create Account"
-        ]
+    st.markdown(
+        '<div class="description">'
+        'Your AI-Powered Career Planning Assistant'
+        '</div>',
+        unsafe_allow_html=True
     )
 
-    # ========================================================
+    tab1, tab2 = st.tabs(
+        ["🔐 Login", "📝 Create Account"]
+    )
+
+    # --------------------------------------------------------
     # LOGIN
-    # ========================================================
+    # --------------------------------------------------------
 
-    with login_tab:
-
-        st.subheader("🔐 Login to Your Account")
+    with tab1:
 
         email = st.text_input(
             "Email",
@@ -254,89 +349,69 @@ def authentication_page():
             use_container_width=True
         ):
 
-            if not email or not password:
+            user = login_user(
+                email,
+                password
+            )
 
-                st.warning(
-                    "Please enter your email and password."
-                )
+            if user:
+
+                st.session_state.logged_in = True
+                st.session_state.user_id = user[0]
+                st.session_state.user_name = user[1]
+
+                st.success("✅ Login successful!")
+
+                st.rerun()
 
             else:
 
-                user = login_user(
-                    email,
-                    password
+                st.error(
+                    "❌ Invalid email or password."
                 )
 
-                if user:
+    # --------------------------------------------------------
+    # SIGN UP
+    # --------------------------------------------------------
 
-                    st.session_state.logged_in = True
-                    st.session_state.user_id = user[0]
-                    st.session_state.user_name = user[1]
-                    st.session_state.user_email = user[2]
-
-                    st.success(
-                        "Login successful!"
-                    )
-
-                    st.rerun()
-
-                else:
-
-                    st.error(
-                        "❌ Invalid email or password."
-                    )
-
-    # ========================================================
-    # CREATE ACCOUNT
-    # ========================================================
-
-    with register_tab:
-
-        st.subheader("📝 Create Your Account")
+    with tab2:
 
         name = st.text_input(
             "Full Name",
-            key="register_name"
+            key="signup_name"
         )
 
         email = st.text_input(
             "Email",
-            key="register_email"
+            key="signup_email"
         )
 
         password = st.text_input(
             "Password",
             type="password",
-            key="register_password"
+            key="signup_password"
         )
 
         confirm_password = st.text_input(
             "Confirm Password",
-            type="password",
-            key="register_confirm"
+            type="password"
         )
 
         if st.button(
-            "📝 Create Account",
+            "🚀 Create Account",
             use_container_width=True
         ):
 
             if not name or not email or not password:
 
                 st.warning(
-                    "Please fill in all fields."
+                    "Please fill all fields."
                 )
 
             elif password != confirm_password:
 
                 st.error(
-                    "❌ Passwords do not match."
-                )
-
-            elif len(password) < 6:
-
-                st.error(
-                    "❌ Password must contain at least 6 characters."
+                    "Passwords do not match."
                 )
 
             else:
@@ -350,134 +425,167 @@ def authentication_page():
                 if created:
 
                     st.success(
-                        "✅ Account created successfully!"
-                    )
-
-                    st.info(
-                        "Please go to the Login tab and login."
+                        "✅ Account created. Please login."
                     )
 
                 else:
 
                     st.error(
-                        "❌ This email is already registered."
+                        "❌ Email already exists."
                     )
+
+    st.stop()
 
 
 # ============================================================
 # SIDEBAR
 # ============================================================
 
+st.sidebar.title("AI Career Navigator")
 
-def show_sidebar():
+st.sidebar.success(
+    f"Welcome, {st.session_state.user_name}"
+)
 
-    st.sidebar.title("🎯 Career Navigator")
+page = st.sidebar.radio(
+    "Navigation",
+    [
+        "🏠 Dashboard",
+        "👤 Career Profile",
+        "🤖 AI Career Assessment",
+        "📄 Resume & ATS",
+        "💼 Job Matching",
+        "📚 Learning Roadmap",
+        "🎤 Interview Preparation",
+        "📈 Progress Tracking",
+        "💳 Subscription"
+    ]
+)
+st.sidebar.divider()
 
-    st.sidebar.success(
-        f"👋 {st.session_state.user_name}"
-    )
+st.sidebar.markdown("### 🔗 Connect with Me")
 
-    st.sidebar.caption(
-        st.session_state.user_email
-    )
+st.sidebar.markdown(
+    """
+    <a href="https://www.linkedin.com/in/barath2005/"
+       target="_blank"
+       style="
+       text-decoration:none;
+       font-size:18px;
+       font-weight:600;
+       ">
+       💼 LinkedIn
+    </a>
+    """,
+    unsafe_allow_html=True
+)
 
-    st.sidebar.divider()
+st.sidebar.divider()
 
-    page = st.sidebar.radio(
-        "Navigation",
-        [
-            "🏠 Dashboard",
-            "👤 Career Profile",
-            "🤖 AI Career Assessment",
-            "📄 Resume & ATS",
-            "💼 Job Matching",
-            "📚 Learning Roadmap",
-            "🎤 Interview Preparation",
-            "📊 Progress Tracking",
-            "💳 Subscription"
-        ]
-    )
+if st.sidebar.button("🚪 Logout"):
 
-    st.sidebar.divider()
+    st.session_state.logged_in = False
+    st.session_state.user_id = None
+    st.session_state.user_name = ""
 
-    if st.sidebar.button(
-        "🚪 Logout",
-        use_container_width=True
-    ):
+    st.rerun()
 
-        st.session_state.logged_in = False
-        st.session_state.user_id = None
-        st.session_state.user_name = ""
-        st.session_state.user_email = ""
 
-        st.rerun()
 
-    return page
+
+# ============================================================
+# HEADER
+# ============================================================
+
+st.markdown(
+    '<div class="main-title">AI CAREER NAVIGATOR</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="description">'
+    'Navigate Your Career. Build Your Future.'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 
 # ============================================================
 # DASHBOARD
 # ============================================================
 
-
-def dashboard():
+if page == "🏠 Dashboard":
 
     st.header("🚀 Career Dashboard")
 
-    st.success(
-        f"Welcome, {st.session_state.user_name}!"
-    )
-
     st.write(
-        "Build your career with personalized AI guidance."
+        f"Welcome **{st.session_state.user_name}**."
     )
 
-    st.divider()
+    st.markdown(
+        """
+        <div class="feature-card">
 
-    col1, col2 = st.columns(2)
+        ### 🎯 AI Career Assessment
 
-    with col1:
+        Analyze your education, skills, experience
+        and career goals.
 
-        st.subheader("🎯 AI Career Assessment")
+        </div>
 
-        st.write(
-            "Analyze your skills, education, interests "
-            "and career goals."
-        )
+        <div class="feature-card">
 
-    with col2:
+        ### 📄 Resume + ATS Analysis
 
-        st.subheader("📄 Resume + ATS")
+        Upload your resume and analyze its
+        compatibility with a target job.
 
-        st.write(
-            "Improve your resume for your target job."
-        )
+        </div>
 
-    col3, col4 = st.columns(2)
+        <div class="feature-card">
 
-    with col3:
+        ### 💼 Job Matching
 
-        st.subheader("💼 Job Matching")
+        Match your skills with suitable
+        technology career roles.
 
-        st.write(
-            "Find suitable job roles based on your profile."
-        )
+        </div>
 
-    with col4:
+        <div class="feature-card">
 
-        st.subheader("📚 Learning Roadmap")
+        ### 📚 Personalized Learning
 
-        st.write(
-            "Get a personalized learning path."
-        )
+        Generate a learning roadmap based
+        on your skill gaps.
+
+        </div>
+
+        <div class="feature-card">
+
+        ### 🎤 Interview Preparation
+
+        Generate technical and HR interview
+        questions for your target role.
+
+        </div>
+
+        <div class="feature-card">
+
+        ### 📈 Career Progress
+
+        Track your skills and learning progress.
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
 # CAREER PROFILE
 # ============================================================
 
-
-def career_profile():
+elif page == "👤 Career Profile":
 
     st.header("👤 Your Career Profile")
 
@@ -485,108 +593,86 @@ def career_profile():
 
     with col1:
 
-        name = st.text_input(
-            "Full Name",
-            value=st.session_state.user_name
-        )
-
         education = st.text_area(
             "Education",
-            placeholder=(
-                "Example:\n"
-                "BCA - Artificial Intelligence & Data Science\n"
-                "MCA - Generative Artificial Intelligence"
-            )
+            placeholder="""BCA - AI & Data Science
+MCA - Generative AI"""
         )
 
         skills = st.text_area(
             "Current Skills",
-            placeholder=(
-                "Python, Java, SQL, Machine Learning, "
-                "Deep Learning, Generative AI"
-            )
+            placeholder="""Python
+SQL
+Machine Learning
+Generative AI
+Streamlit"""
+        )
+
+        interests = st.text_area(
+            "Career Interests",
+            placeholder="Artificial Intelligence, GenAI"
         )
 
     with col2:
 
-        interests = st.text_area(
-            "Career Interests",
-            placeholder=(
-                "Artificial Intelligence, "
-                "Machine Learning, Generative AI"
-            )
-        )
-
         experience = st.text_area(
-            "Projects / Internship Experience",
-            placeholder=(
-                "AI Resume Scoring Web App\n"
-                "Vehicle Detection using YOLO\n"
-                "AI/ML Internship"
-            )
+            "Projects / Internship",
+            placeholder="""AI Resume Scoring Web App
+Vehicle Detection using YOLO
+AI/ML Internship"""
         )
 
         career_goal = st.text_input(
             "Career Goal",
-            placeholder="Example: AI Engineer"
+            placeholder="AI Engineer"
         )
 
-    career_level = st.selectbox(
-        "Current Career Level",
-        [
-            "Student",
-            "Fresher",
-            "Entry-Level Professional",
-            "1-2 Years Experience",
-            "3+ Years Experience"
-        ]
-    )
+        career_level = st.selectbox(
+            "Career Level",
+            [
+                "Student",
+                "Fresher",
+                "Entry-Level Professional",
+                "1-2 Years Experience",
+                "3+ Years Experience"
+            ]
+        )
+
+        career_domain = st.selectbox(
+            "Preferred Domain",
+            [
+                "Artificial Intelligence",
+                "Machine Learning",
+                "Generative AI",
+                "Data Science",
+                "Data Engineering",
+                "Software Development",
+                "Cloud Computing",
+                "Cybersecurity",
+                "Computer Vision",
+                "Natural Language Processing"
+            ]
+        )
 
     if st.button(
         "💾 Save Career Profile",
+        type="primary",
         use_container_width=True
     ):
 
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            DELETE FROM profiles
-            WHERE user_id = ?
-            """,
-            (st.session_state.user_id,)
+        save_profile(
+            st.session_state.user_id,
+            education,
+            skills,
+            interests,
+            experience,
+            career_goal,
+            career_level,
+            career_domain
         )
-
-        cursor.execute(
-            """
-            INSERT INTO profiles(
-                user_id,
-                education,
-                skills,
-                interests,
-                experience,
-                career_goal,
-                career_level
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                st.session_state.user_id,
-                education,
-                skills,
-                interests,
-                experience,
-                career_goal,
-                career_level
-            )
-        )
-
-        conn.commit()
-        conn.close()
 
         st.success(
-            "✅ Career profile saved successfully!"
+            "✅ Career profile saved successfully."
         )
 
 
@@ -594,234 +680,330 @@ def career_profile():
 # AI CAREER ASSESSMENT
 # ============================================================
 
-
-def ai_career_assessment():
+elif page == "🤖 AI Career Assessment":
 
     st.header("🤖 AI Career Assessment")
 
     education = st.text_area(
-        "Education",
-        placeholder="Enter your education"
+        "Education"
     )
 
     skills = st.text_area(
-        "Current Skills",
-        placeholder="Python, SQL, AI, ML..."
+        "Current Skills"
     )
 
     interests = st.text_area(
-        "Career Interests",
-        placeholder="AI, ML, GenAI..."
+        "Interests"
     )
 
     experience = st.text_area(
-        "Projects / Internship",
-        placeholder="Enter your experience"
+        "Projects / Experience"
     )
 
     career_goal = st.text_input(
-        "Career Goal",
-        placeholder="Example: AI Engineer"
+        "Career Goal"
     )
 
     if st.button(
         "🚀 Generate AI Career Plan",
+        type="primary",
         use_container_width=True
     ):
 
         if not education or not skills or not career_goal:
 
             st.warning(
-                "Please enter Education, Skills and Career Goal."
+                "Please enter education, skills and career goal."
             )
 
-        else:
+            st.stop()
 
-            prompt = f"""
+        prompt = f"""
 You are an expert AI Career Advisor.
 
-Candidate Education:
+Candidate:
+{st.session_state.user_name}
+
+Education:
 {education}
 
-Current Skills:
+Skills:
 {skills}
 
-Career Interests:
+Interests:
 {interests}
 
-Projects and Internship:
+Experience:
 {experience}
 
 Career Goal:
 {career_goal}
 
-Create a personalized AI Career Navigation Report.
+Create a professional career assessment.
 
 Include:
 
-1. Career Assessment
-2. Recommended Career Roles
-3. Skill Gap Analysis
-4. Technical Skills Roadmap
-5. 6-Month Learning Roadmap
-6. Project Recommendations
-7. Resume Recommendations
-8. Interview Preparation
-9. Job Search Strategy
-10. 1-Year Career Roadmap
-11. 3-Year Career Roadmap
-12. 5-Year Career Roadmap
-13. Final Recommendation
+1. Career readiness
+2. Strengths
+3. Recommended career roles
+4. Skill gap analysis
+5. Technical roadmap
+6. 6-month roadmap
+7. Project recommendations
+8. Resume recommendations
+9. Interview preparation
+10. Job search strategy
+11. 1-year roadmap
+12. 3-year roadmap
+13. 5-year roadmap
+14. Final recommendation
 
-Keep the advice practical and realistic.
+Make the advice practical and realistic.
 """
 
-            api_key = os.getenv(
-                "GEMINI_API_KEY"
-            )
+        with st.spinner(
+            "🤖 AI is creating your career plan..."
+        ):
 
-            if not api_key:
+            try:
 
-                st.error(
-                    "❌ GEMINI_API_KEY is not configured."
+                response = client.models.generate_content(
+                    model="gemini-3.6-flash",
+                    contents=prompt
                 )
 
-            else:
+                result = response.text
 
-                try:
+                save_report(
+                    st.session_state.user_id,
+                    result
+                )
 
-                    from google import genai
+                st.success(
+                    "✅ Career report generated!"
+                )
 
-                    client = genai.Client(
-                        api_key=api_key
-                    )
+                st.markdown(result)
 
-                    response = client.models.generate_content(
-                        model=os.getenv(
-                            "GEMINI_MODEL",
-                            "gemini-3.6-flash"
-                        ),
-                        contents=prompt
-                    )
+                st.download_button(
+                    "📥 Download Career Report",
+                    result,
+                    "AI_Career_Navigator_Report.txt",
+                    "text/plain"
+                )
 
-                    if response.text:
+            except Exception as e:
 
-                        st.divider()
+                st.error(
+                    "❌ Error generating report."
+                )
 
-                        st.subheader(
-                            "📊 Your AI Career Report"
-                        )
-
-                        st.markdown(
-                            response.text
-                        )
-
-                        st.download_button(
-                            "📥 Download Career Report",
-                            response.text,
-                            file_name=(
-                                "AI_Career_Navigator_Report.txt"
-                            ),
-                            mime="text/plain"
-                        )
-
-                except Exception as e:
-
-                    st.error(
-                        "❌ Gemini API Error"
-                    )
-
-                    st.exception(e)
+                st.exception(e)
 
 
 # ============================================================
 # RESUME ATS
 # ============================================================
 
+elif page == "📄 Resume & ATS":
 
-def resume_ats():
+    st.header("📄 Resume Upload + ATS Analysis")
 
-    st.header("📄 Resume + ATS Analysis")
-
-    resume = st.file_uploader(
+    uploaded_file = st.file_uploader(
         "Upload your resume",
-        type=["pdf", "txt"]
+        type=["pdf", "txt", "docx"]
     )
 
-    target_role = st.text_input(
+    target_job = st.text_input(
         "Target Job Role",
         placeholder="Example: AI Engineer"
     )
 
+    if uploaded_file:
+
+        st.success(
+            f"✅ Resume uploaded: {uploaded_file.name}"
+        )
+
     if st.button(
         "📊 Analyze Resume",
+        type="primary",
         use_container_width=True
     ):
 
-        if not resume:
+        if not uploaded_file:
 
             st.warning(
                 "Please upload your resume."
             )
 
-        else:
+            st.stop()
 
-            st.success(
-                f"Resume uploaded: {resume.name}"
+        resume_text = ""
+
+        # TXT
+        if uploaded_file.name.endswith(".txt"):
+
+            resume_text = (
+                uploaded_file
+                .read()
+                .decode("utf-8", errors="ignore")
             )
 
-            st.info(
-                "Resume analysis module is ready."
+        # PDF
+        elif uploaded_file.name.endswith(".pdf"):
+
+            try:
+
+                from PyPDF2 import PdfReader
+
+                reader = PdfReader(
+                    uploaded_file
+                )
+
+                for page_pdf in reader.pages:
+
+                    text = page_pdf.extract_text()
+
+                    if text:
+                        resume_text += text
+
+            except Exception:
+
+                st.error(
+                    "Install PyPDF2 to read PDF files."
+                )
+
+                st.stop()
+
+        # DOCX
+        elif uploaded_file.name.endswith(".docx"):
+
+            try:
+
+                from docx import Document
+
+                document = Document(
+                    uploaded_file
+                )
+
+                resume_text = "\n".join(
+                    paragraph.text
+                    for paragraph in document.paragraphs
+                )
+
+            except Exception:
+
+                st.error(
+                    "Install python-docx to read DOCX files."
+                )
+
+                st.stop()
+
+        prompt = f"""
+You are an ATS Resume Expert.
+
+Target Job:
+{target_job}
+
+Resume:
+{resume_text}
+
+Analyze the resume.
+
+Give:
+
+1. ATS Score out of 100
+2. Technical skills found
+3. Missing skills
+4. Keyword recommendations
+5. Project improvements
+6. Experience improvements
+7. Education improvements
+8. Formatting recommendations
+9. Resume summary recommendation
+10. Final ATS improvement plan
+"""
+
+        with st.spinner(
+            "📄 Analyzing resume..."
+        ):
+
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
             )
+
+            ats_result = response.text
+
+        st.markdown(ats_result)
 
 
 # ============================================================
 # JOB MATCHING
 # ============================================================
 
+elif page == "💼 Job Matching":
 
-def job_matching():
+    st.header("💼 AI Job Matching")
 
-    st.header("💼 Job Matching")
-
-    skills = st.text_area(
+    skills = st.text_input(
         "Your Skills",
-        placeholder="Python, SQL, Machine Learning..."
+        placeholder="Python, SQL, Machine Learning, GenAI"
     )
 
-    target_role = st.text_input(
-        "Target Job Role",
+    job_role = st.text_input(
+        "Target Role",
         placeholder="AI Engineer"
     )
 
-    location = st.text_input(
-        "Preferred Location",
-        placeholder="Chennai / Bangalore / Remote"
+    job_description = st.text_area(
+        "Job Description",
+        placeholder="Paste the job description here..."
     )
 
     if st.button(
-        "🔎 Find Suitable Jobs",
+        "🎯 Match My Profile",
+        type="primary",
         use_container_width=True
     ):
 
-        if skills and target_role:
+        prompt = f"""
+You are an AI recruitment specialist.
 
-            st.success(
-                "Job matching analysis completed."
+Candidate skills:
+{skills}
+
+Target role:
+{job_role}
+
+Job description:
+{job_description}
+
+Analyze the match.
+
+Return:
+
+1. Match percentage
+2. Matching skills
+3. Missing skills
+4. Recommended skills
+5. Resume keywords
+6. Interview preparation
+7. Overall recommendation
+"""
+
+        with st.spinner(
+            "💼 Matching your profile..."
+        ):
+
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
             )
 
-            st.write(
-                f"Target Role: **{target_role}**"
-            )
-
-            st.write(
-                f"Preferred Location: **{location}**"
-            )
-
-        else:
-
-            st.warning(
-                "Please enter your skills and target role."
+            st.markdown(
+                response.text
             )
 
 
@@ -829,108 +1011,127 @@ def job_matching():
 # LEARNING ROADMAP
 # ============================================================
 
+elif page == "📚 Learning Roadmap":
 
-def learning_roadmap():
+    st.header("📚 Personalized Learning Roadmap")
 
-    st.header("📚 Learning Roadmap")
-
-    goal = st.text_input(
+    target_role = st.text_input(
         "Target Career",
         placeholder="AI Engineer"
     )
 
-    duration = st.selectbox(
-        "Duration",
-        [
-            "3 Months",
-            "6 Months",
-            "12 Months"
-        ]
+    current_skills = st.text_area(
+        "Current Skills",
+        placeholder="Python, SQL, ML"
     )
 
     if st.button(
-        "📚 Generate Roadmap",
+        "📚 Generate Learning Roadmap",
+        type="primary",
         use_container_width=True
     ):
 
-        if not goal:
+        prompt = f"""
+Create a personalized learning roadmap.
 
-            st.warning(
-                "Please enter your target career."
+Target career:
+{target_role}
+
+Current skills:
+{current_skills}
+
+Create:
+
+Month 1:
+Month 2:
+Month 3:
+Month 4:
+Month 5:
+Month 6:
+
+For every month include:
+
+- Topics
+- Technologies
+- Practice
+- Project
+- Expected outcome
+"""
+
+        with st.spinner(
+            "📚 Creating roadmap..."
+        ):
+
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
             )
 
-        else:
-
-            st.success(
-                f"{duration} roadmap created for {goal}."
+            st.markdown(
+                response.text
             )
-
-            st.write("### Month 1")
-            st.write("Programming and fundamentals")
-
-            st.write("### Month 2")
-            st.write("Machine Learning")
-
-            st.write("### Month 3")
-            st.write("Deep Learning")
-
-            st.write("### Month 4")
-            st.write("Generative AI")
-
-            st.write("### Month 5")
-            st.write("Projects and deployment")
-
-            st.write("### Month 6")
-            st.write("Resume and interview preparation")
 
 
 # ============================================================
 # INTERVIEW PREPARATION
 # ============================================================
 
+elif page == "🎤 Interview Preparation":
 
-def interview_preparation():
-
-    st.header("🎤 Interview Preparation")
+    st.header("🎤 AI Interview Preparation")
 
     role = st.text_input(
         "Target Job Role",
         placeholder="AI Engineer"
     )
 
+    level = st.selectbox(
+        "Interview Level",
+        [
+            "Fresher",
+            "Entry Level",
+            "Intermediate",
+            "Experienced"
+        ]
+    )
+
     if st.button(
         "🎤 Generate Interview Questions",
+        type="primary",
         use_container_width=True
     ):
 
-        if role:
+        prompt = f"""
+You are an expert technical interviewer.
 
-            st.success(
-                f"Interview preparation created for {role}."
+Job Role:
+{role}
+
+Level:
+{level}
+
+Generate:
+
+1. 10 technical questions
+2. 10 Python/coding questions
+3. 10 AI/ML questions
+4. 10 Generative AI questions
+5. 5 project questions
+6. 5 HR questions
+7. Model answers and preparation tips
+"""
+
+        with st.spinner(
+            "🎤 Preparing interview questions..."
+        ):
+
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
             )
 
-            st.write("### Technical Questions")
-
-            st.write(
-                "• Explain supervised and unsupervised learning.\n"
-                "• What is overfitting?\n"
-                "• Explain CNN.\n"
-                "• What is a Transformer?\n"
-                "• What is RAG?"
-            )
-
-            st.write("### HR Questions")
-
-            st.write(
-                "• Tell me about yourself.\n"
-                "• Why should we hire you?\n"
-                "• What are your career goals?"
-            )
-
-        else:
-
-            st.warning(
-                "Please enter your target role."
+            st.markdown(
+                response.text
             )
 
 
@@ -938,57 +1139,104 @@ def interview_preparation():
 # PROGRESS TRACKING
 # ============================================================
 
+elif page == "📈 Progress Tracking":
 
-def progress_tracking():
+    st.header("📈 Career Progress Tracking")
 
-    st.header("📊 Career Progress Tracking")
-
-    tasks = [
-        "Learn Python",
-        "Learn SQL",
-        "Learn Machine Learning",
-        "Learn Deep Learning",
-        "Learn Generative AI",
-        "Build AI Project",
-        "Build GenAI Project",
-        "Complete Resume",
-        "Practice Coding",
-        "Practice Interviews"
-    ]
-
-    completed = 0
-
-    for i, task in enumerate(tasks):
-
-        if st.checkbox(
-            task,
-            key=f"task_{i}"
-        ):
-
-            completed += 1
-
-    progress = completed / len(tasks)
-
-    st.progress(
-        progress
+    skill = st.text_input(
+        "Skill",
+        placeholder="Python"
     )
 
-    st.metric(
-        "Career Preparation",
-        f"{int(progress * 100)}%"
+    status = st.selectbox(
+        "Status",
+        [
+            "Not Started",
+            "Learning",
+            "Practicing",
+            "Completed"
+        ]
     )
+
+    if st.button(
+        "➕ Add Skill"
+    ):
+
+        conn = sqlite3.connect(DB_NAME)
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO progress
+            (user_id, skill, status)
+            VALUES (?, ?, ?)
+            """,
+            (
+                st.session_state.user_id,
+                skill,
+                status
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        st.success(
+            "✅ Skill added."
+        )
+
+    conn = sqlite3.connect(DB_NAME)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT skill, status
+        FROM progress
+        WHERE user_id = ?
+        """,
+        (st.session_state.user_id,)
+    )
+
+    progress_data = cursor.fetchall()
+
+    conn.close()
+
+    if progress_data:
+
+        st.subheader("Your Skills")
+
+        for skill_name, skill_status in progress_data:
+
+            if skill_status == "Completed":
+
+                st.success(
+                    f"✅ {skill_name} — {skill_status}"
+                )
+
+            elif skill_status == "Learning":
+
+                st.info(
+                    f"📚 {skill_name} — {skill_status}"
+                )
+
+            else:
+
+                st.write(
+                    f"🔹 {skill_name} — {skill_status}"
+                )
 
 
 # ============================================================
 # SUBSCRIPTION
 # ============================================================
 
+elif page == "💳 Subscription":
 
-def subscription():
+    st.header("💳 AI Career Navigator Plans")
 
-    st.header("💳 Subscription")
-
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
 
@@ -997,13 +1245,12 @@ def subscription():
         st.write("₹0 / month")
 
         st.write("✓ Basic Career Assessment")
-        st.write("✓ Basic Learning Roadmap")
-        st.write("✓ Basic Interview Preparation")
+        st.write("✓ Basic Roadmap")
+        st.write("✓ Basic Skill Analysis")
 
         st.button(
             "Current Plan",
-            disabled=True,
-            use_container_width=True
+            key="free_plan"
         )
 
     with col2:
@@ -1012,89 +1259,48 @@ def subscription():
 
         st.write("₹199 / month")
 
-        st.write("✓ Advanced AI Career Assessment")
+        st.write("✓ Advanced AI Assessment")
         st.write("✓ Resume ATS Analysis")
         st.write("✓ Job Matching")
-        st.write("✓ Personalized Roadmap")
         st.write("✓ Interview Preparation")
+        st.write("✓ Personalized Roadmap")
         st.write("✓ Progress Tracking")
 
-        if st.button(
-            "⭐ Choose Pro",
-            use_container_width=True
-        ):
+        st.button(
+            "Choose Pro",
+            key="pro_plan"
+        )
 
-            st.info(
-                "Payment gateway can be connected here."
-            )
+    with col3:
+
+        st.subheader("🏢 College")
+
+        st.write("Contact for pricing")
+
+        st.write("✓ Student Dashboard")
+        st.write("✓ Placement Analytics")
+        st.write("✓ Career Assessment")
+        st.write("✓ Resume Analysis")
+        st.write("✓ Interview Preparation")
+        st.write("✓ Admin Dashboard")
+
+        st.button(
+            "Contact Us",
+            key="college_plan"
+        )
 
 
 # ============================================================
 # FOOTER
 # ============================================================
 
+st.divider()
 
-def show_footer():
-
-    st.markdown(
-        """
-        <div class="footer">
-            © 2026 Barath. All Rights Reserved.<br>
-            🚀 AI Career Navigator
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# ============================================================
-# MAIN APPLICATION
-# ============================================================
-
-if not st.session_state.logged_in:
-
-    authentication_page()
-
-else:
-
-    page = show_sidebar()
-
-    show_header()
-
-    if page == "🏠 Dashboard":
-
-        dashboard()
-
-    elif page == "👤 Career Profile":
-
-        career_profile()
-
-    elif page == "🤖 AI Career Assessment":
-
-        ai_career_assessment()
-
-    elif page == "📄 Resume & ATS":
-
-        resume_ats()
-
-    elif page == "💼 Job Matching":
-
-        job_matching()
-
-    elif page == "📚 Learning Roadmap":
-
-        learning_roadmap()
-
-    elif page == "🎤 Interview Preparation":
-
-        interview_preparation()
-
-    elif page == "📊 Progress Tracking":
-
-        progress_tracking()
-
-    elif page == "💳 Subscription":
-
-        subscription()
-
-    show_footer()
+st.markdown(
+    """
+    <div class="footer">
+        © 2026 Barath. All Rights Reserved.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
