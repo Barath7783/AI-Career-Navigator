@@ -815,7 +815,6 @@ Make the advice practical and realistic.
 
                 st.exception(e)
 
-
 # ============================================================
 # RESUME ATS
 # ============================================================
@@ -835,7 +834,6 @@ elif page == "📄 Resume & ATS":
     )
 
     if uploaded_file:
-
         st.success(
             f"✅ Resume uploaded: {uploaded_file.name}"
         )
@@ -847,111 +845,232 @@ elif page == "📄 Resume & ATS":
     ):
 
         if not uploaded_file:
+            st.warning("Please upload your resume.")
+            st.stop()
 
-            st.warning(
-                "Please upload your resume."
-            )
-
+        if not target_job:
+            st.warning("Please enter the target job role.")
             st.stop()
 
         resume_text = ""
 
+        # ====================================================
         # TXT
-        if uploaded_file.name.endswith(".txt"):
+        # ====================================================
 
-            resume_text = (
-                uploaded_file
-                .read()
-                .decode("utf-8", errors="ignore")
-            )
+        if uploaded_file.name.lower().endswith(".txt"):
 
+            try:
+
+                resume_text = (
+                    uploaded_file
+                    .read()
+                    .decode("utf-8", errors="ignore")
+                )
+
+            except Exception as e:
+
+                st.error("❌ Could not read TXT file.")
+                st.exception(e)
+                st.stop()
+
+
+        # ====================================================
         # PDF
-        elif uploaded_file.name.endswith(".pdf"):
+        # ====================================================
+
+        elif uploaded_file.name.lower().endswith(".pdf"):
 
             try:
 
                 from PyPDF2 import PdfReader
 
-                reader = PdfReader(
-                    uploaded_file
-                )
+                reader = PdfReader(uploaded_file)
 
                 for page_pdf in reader.pages:
 
                     text = page_pdf.extract_text()
 
                     if text:
-                        resume_text += text
+                        resume_text += text + "\n"
 
-            except Exception:
+            except ImportError:
 
                 st.error(
-                    "Install PyPDF2 to read PDF files."
+                    "❌ PyPDF2 is not installed. "
+                    "Add PyPDF2 to requirements.txt."
                 )
 
                 st.stop()
 
+            except Exception as e:
+
+                st.error("❌ Could not read PDF file.")
+                st.exception(e)
+                st.stop()
+
+
+        # ====================================================
         # DOCX
-        elif uploaded_file.name.endswith(".docx"):
+        # ====================================================
+
+        elif uploaded_file.name.lower().endswith(".docx"):
 
             try:
 
                 from docx import Document
 
-                document = Document(
-                    uploaded_file
-                )
+                document = Document(uploaded_file)
 
-                resume_text = "\n".join(
-                    paragraph.text
+                # Read normal paragraphs
+                paragraphs = [
+                    paragraph.text.strip()
                     for paragraph in document.paragraphs
-                )
+                    if paragraph.text.strip()
+                ]
 
-            except Exception:
+                resume_text = "\n".join(paragraphs)
+
+                # Also read tables inside the resume
+                for table in document.tables:
+
+                    for row in table.rows:
+
+                        row_text = " | ".join(
+                            cell.text.strip()
+                            for cell in row.cells
+                        )
+
+                        if row_text.strip():
+                            resume_text += "\n" + row_text
+
+            except ImportError:
 
                 st.error(
-                    "Install python-docx to read DOCX files."
+                    "❌ python-docx is not installed."
+                )
+
+                st.info(
+                    "Add python-docx to requirements.txt "
+                    "and redeploy your Streamlit app."
                 )
 
                 st.stop()
 
-        prompt = f"""
-You are an ATS Resume Expert.
+            except Exception as e:
 
-Target Job:
-{target_job}
+                st.error(
+                    "❌ Could not read DOCX file."
+                )
 
-Resume:
-{resume_text}
+                st.exception(e)
+                st.stop()
 
-Analyze the resume.
 
-Give:
+        # ====================================================
+        # CHECK RESUME TEXT
+        # ====================================================
 
-1. ATS Score out of 100
-2. Technical skills found
-3. Missing skills
-4. Keyword recommendations
-5. Project improvements
-6. Experience improvements
-7. Education improvements
-8. Formatting recommendations
-9. Resume summary recommendation
-10. Final ATS improvement plan
-"""
+        if not resume_text.strip():
 
-        with st.spinner(
-            "📄 Analyzing resume..."
-        ):
-
-            response = client.models.generate_content(
-                model="gemini-3.7-flash",
-                contents=prompt
+            st.error(
+                "❌ No readable text was found in the resume."
             )
 
-            ats_result = response.text
+            st.stop()
 
-        st.markdown(ats_result)
+
+        # ====================================================
+        # SHOW EXTRACTED TEXT
+        # ====================================================
+
+        with st.expander("📄 View Extracted Resume Text"):
+
+            st.text_area(
+                "Resume Content",
+                resume_text,
+                height=300
+            )
+
+
+        # ====================================================
+        # ATS PROMPT
+        # ====================================================
+
+        prompt = f"""
+You are an expert ATS Resume Analyzer and Career Advisor.
+
+TARGET JOB ROLE:
+{target_job}
+
+RESUME:
+{resume_text}
+
+Analyze this resume specifically for the target role.
+
+Provide a professional ATS report with:
+
+1. ATS Score out of 100
+2. Resume Strengths
+3. Technical Skills Found
+4. Soft Skills Found
+5. Missing Technical Skills
+6. Important Missing Keywords
+7. Job Description Alignment
+8. Project Improvements
+9. Internship/Experience Improvements
+10. Education Improvements
+11. Resume Formatting Improvements
+12. Resume Summary Recommendation
+13. Recommended Skills to Learn
+14. Interview Preparation Topics
+15. Final ATS Improvement Plan
+
+Give practical and specific recommendations.
+Do not invent experience that is not present in the resume.
+"""
+
+        # ====================================================
+        # GEMINI ANALYSIS
+        # ====================================================
+
+        with st.spinner(
+            "🤖 AI is analyzing your resume..."
+        ):
+
+            try:
+
+                response = client.models.generate_content(
+                    model="gemini-3.6-flash",
+                    contents=prompt
+                )
+
+                ats_result = response.text
+
+                st.success(
+                    "✅ Resume ATS analysis completed!"
+                )
+
+                st.markdown(ats_result)
+
+                # ====================================================
+                # DOWNLOAD REPORT
+                # ====================================================
+
+                st.download_button(
+                    "📥 Download ATS Report",
+                    ats_result,
+                    "AI_Career_Navigator_ATS_Report.txt",
+                    "text/plain"
+                )
+
+            except Exception as e:
+
+                st.error(
+                    "❌ Error generating ATS analysis."
+                )
+
+                st.exception(e)
 
 
 # ============================================================
