@@ -304,36 +304,34 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+# 👥 GUEST ID - BEFORE LOGIN
 # ============================================================
-# 👥 GUEST ACCOUNT
-# ============================================================
 
-if "guest_mode" not in st.session_state:
-    st.session_state.guest_mode = False
+st.subheader("👥 Guest Account")
 
-if st.sidebar.button("👥 Guest Account", use_container_width=True):
-    st.session_state.guest_mode = True
-    st.session_state.user_name = "Guest User"
-    st.session_state.user_email = "guest@aicareernavigator.app"
-    st.rerun()
+st.write("Continue without creating an account.")
 
-if st.session_state.guest_mode:
+guest_id = st.text_input(
+    "Guest ID",
+    placeholder="Enter Guest ID",
+    key="guest_id"
+)
 
-    st.sidebar.success("👥 Guest Account")
+if st.button("👥 Continue as Guest", use_container_width=True):
 
-    st.sidebar.write("Welcome, Guest User")
+    if guest_id.strip():
 
-    st.sidebar.caption(
-        "Guest mode allows you to explore AI Career Navigator "
-        "without creating an account."
-    )
+        st.session_state.logged_in = True
+        st.session_state.is_guest = True
+        st.session_state.user_id = guest_id.strip()
+        st.session_state.user_name = "Guest User"
+        st.session_state.user_email = f"{guest_id.strip()}@guest.local"
 
-    if st.sidebar.button("🚪 Exit Guest Account", use_container_width=True):
-        st.session_state.guest_mode = False
-        st.session_state.user_name = ""
-        st.session_state.user_email = ""
+        st.success(f"Welcome, Guest {guest_id.strip()}!")
         st.rerun()
 
+    else:
+        st.error("Please enter a Guest ID.")
 # ============================================================
 # LOGIN / SIGNUP
 # ============================================================
