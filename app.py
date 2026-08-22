@@ -481,7 +481,7 @@ st.sidebar.markdown("### 🔗 Connect with Me")
 
 st.sidebar.markdown(
     """
-    <a href="https://www.linkedin.com/in/YOUR-LINKEDIN-USERNAME/"
+    <a href="https://www.linkedin.com/in/barath2005/"
        target="_blank"
        style="
        text-decoration:none;
