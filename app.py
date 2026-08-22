@@ -1,136 +1,227 @@
-<<<<<<< HEAD
 import os
 import streamlit as st
 from dotenv import load_dotenv
 from google import genai
 
-# Load .env
-load_dotenv()
+# ============================================================
+# AI CAREER NAVIGATOR
+# ============================================================
 
-# Get Gemini API key
-api_key = os.getenv("GEMINI_API_KEY")
-
-# Check API key
-if not api_key:
-    st.error("Gemini API key not found. Please check your .env file.")
-    st.stop()
-
-# Gemini
-client = genai.Client(api_key=api_key)
-
-# Page settings
+# Page configuration
 st.set_page_config(
     page_title="AI Career Navigator",
     page_icon="🚀",
     layout="wide"
 )
 
-# Title
-st.title("🚀 AI Career Navigator")
-st.subheader("Navigate Your Career. Build Your Future.")
+# ============================================================
+# LOAD ENVIRONMENT VARIABLES
+# ============================================================
 
-st.write(
-    "AI-powered career guidance, skill-gap analysis "
-    "and personalized career roadmap."
+load_dotenv()
+
+api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    st.error(
+        "❌ Gemini API key not found. "
+        "Please add GEMINI_API_KEY to your .env file."
+    )
+    st.stop()
+
+# Initialize Gemini
+client = genai.Client(api_key=api_key)
+
+
+# ============================================================
+# HEADER
+# ============================================================
+
+st.title("🚀 AI Career Navigator")
+
+st.subheader(
+    "Your AI-powered guide for skills, careers, jobs and learning paths"
+)
+
+st.markdown(
+    """
+    **AI Career Navigator** analyzes your education, skills, interests
+    and career goals to create a personalized career roadmap.
+    """
 )
 
 st.divider()
 
-# Sidebar
-st.sidebar.header("👤 Your Profile")
 
-name = st.sidebar.text_input(
-    "Your Name"
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+st.sidebar.title("🎯 Career Navigator")
+
+st.sidebar.info(
+    """
+    Enter your profile information and let AI create
+    a personalized career plan.
+    """
 )
 
-education = st.sidebar.text_input(
-    "Education",
-    placeholder="Example: MCA Generative AI"
+st.sidebar.markdown("### Features")
+
+st.sidebar.markdown(
+    """
+    - 🎓 Education Analysis
+    - 💻 Skill Analysis
+    - 🤖 AI Career Recommendations
+    - 📚 Learning Roadmap
+    - 💼 Job Role Suggestions
+    - 📈 Skill Gap Analysis
+    - 🚀 Future Career Plan
+    """
 )
 
-skills = st.sidebar.text_area(
-    "Your Skills",
-    placeholder="Python, SQL, Machine Learning"
-)
 
-interests = st.sidebar.text_area(
-    "Your Interests",
-    placeholder="Generative AI, NLP, Computer Vision"
-)
+# ============================================================
+# USER INPUT
+# ============================================================
 
-target_role = st.sidebar.text_input(
-    "Target Job",
-    placeholder="Example: AI Engineer"
-)
+st.header("👤 Your Career Profile")
 
-experience = st.sidebar.selectbox(
-    "Experience",
+col1, col2 = st.columns(2)
+
+with col1:
+
+    name = st.text_input(
+        "Full Name",
+        placeholder="Example: Barath G"
+    )
+
+    education = st.text_area(
+        "Education",
+        placeholder=(
+            "Example:\n"
+            "BCA - Artificial Intelligence & Data Science\n"
+            "MCA - Generative Artificial Intelligence"
+        ),
+        height=120
+    )
+
+    skills = st.text_area(
+        "Current Skills",
+        placeholder=(
+            "Example: Python, Java, SQL, Machine Learning, "
+            "Deep Learning, Generative AI, Streamlit"
+        ),
+        height=120
+    )
+
+with col2:
+
+    interests = st.text_area(
+        "Career Interests",
+        placeholder=(
+            "Example: Artificial Intelligence, "
+            "Generative AI, Machine Learning, Data Science"
+        ),
+        height=120
+    )
+
+    experience = st.text_area(
+        "Projects / Internship Experience",
+        placeholder=(
+            "Example:\n"
+            "AI Resume Scoring Web App\n"
+            "Vehicle Detection using YOLO\n"
+            "Python AI/ML Internship"
+        ),
+        height=120
+    )
+
+    career_goal = st.text_input(
+        "Career Goal",
+        placeholder="Example: AI Engineer"
+    )
+
+
+# ============================================================
+# EXPERIENCE LEVEL
+# ============================================================
+
+experience_level = st.selectbox(
+    "Current Career Level",
     [
         "Student",
         "Fresher",
-        "0-2 Years",
-        "2-5 Years"
+        "Entry-Level Professional",
+        "1-2 Years Experience",
+        "3+ Years Experience"
     ]
 )
 
-# Button
-analyze = st.sidebar.button(
-    "🚀 Analyze My Career"
+
+# ============================================================
+# PREFERRED CAREER DOMAIN
+# ============================================================
+
+career_domain = st.selectbox(
+    "Preferred Career Domain",
+    [
+        "Artificial Intelligence",
+        "Machine Learning",
+        "Generative AI",
+        "Data Science",
+        "Data Engineering",
+        "Software Development",
+        "Cloud Computing",
+        "Cybersecurity",
+        "Computer Vision",
+        "Natural Language Processing",
+        "Not Sure"
+    ]
 )
 
-# Home screen
-if not analyze:
 
-    st.info(
-        "👈 Enter your details on the left and "
-        "click **Analyze My Career**."
-    )
+# ============================================================
+# GENERATE CAREER REPORT
+# ============================================================
 
-    col1, col2, col3 = st.columns(3)
+generate_report = st.button(
+    "🚀 Generate My AI Career Plan",
+    type="primary",
+    use_container_width=True
+)
 
-    with col1:
-        st.metric(
-            "🎯 Career",
-            "AI Powered"
-        )
 
-    with col2:
-        st.metric(
-            "🧠 Skill Analysis",
-            "Gemini"
-        )
+if generate_report:
 
-    with col3:
-        st.metric(
-            "🗺️ Roadmap",
-            "Personalized"
-        )
-
-# Analyze
-else:
-
-    if not name or not education or not skills or not target_role:
-
-        st.warning(
-            "Please enter Name, Education, Skills "
-            "and Target Job."
-        )
-
+    # Validate inputs
+    if not education.strip():
+        st.warning("⚠️ Please enter your education details.")
         st.stop()
 
-    # Prompt for Gemini
+    if not skills.strip():
+        st.warning("⚠️ Please enter your current skills.")
+        st.stop()
+
+    if not career_goal.strip():
+        st.warning("⚠️ Please enter your career goal.")
+        st.stop()
+
+    # ========================================================
+    # PROMPT
+    # ========================================================
+
     prompt = f"""
-You are an expert AI career advisor.
+You are an expert AI Career Advisor and Technology Career Strategist.
 
-Candidate information:
+Create a detailed but practical career plan based on the following
+candidate profile.
 
-Name: {name}
+Candidate Name:
+{name}
 
 Education:
 {education}
-
-Experience:
-{experience}
 
 Current Skills:
 {skills}
@@ -138,31 +229,100 @@ Current Skills:
 Interests:
 {interests}
 
-Target Job:
-{target_role}
+Projects / Internship Experience:
+{experience}
 
-Create a personalized career plan.
+Career Goal:
+{career_goal}
 
-Give the answer using these sections:
+Experience Level:
+{experience_level}
+
+Preferred Career Domain:
+{career_domain}
+
+Generate a professional AI Career Navigation Report.
+
+The report must contain the following sections:
 
 1. Career Assessment
-2. Career Match Percentage
-3. Current Strengths
-4. Skill Gaps
-5. Skills to Learn
-6. 6-Month Career Roadmap
-7. Recommended Projects
-8. Certifications
-9. Interview Preparation
-10. Job Application Strategy
-11. Suitable Job Roles
-12. Final Career Advice
+   - Current profile
+   - Career readiness
+   - Strengths
 
-Give practical and specific advice.
+2. Recommended Career Roles
+   - Recommend 5 suitable job roles
+   - Explain why each role is suitable
+   - Give an approximate difficulty level
+
+3. Skill Gap Analysis
+   - Existing skills
+   - Missing skills
+   - Priority of each missing skill
+
+4. Technical Skills Roadmap
+   - Programming
+   - AI/ML
+   - Generative AI
+   - Frameworks
+   - Databases
+   - Cloud
+   - Deployment
+   - Git/GitHub
+
+5. 6-Month Learning Roadmap
+   Month 1
+   Month 2
+   Month 3
+   Month 4
+   Month 5
+   Month 6
+
+6. Project Recommendations
+   - Beginner project
+   - Intermediate project
+   - Advanced project
+   - One strong portfolio project
+
+7. Resume Recommendations
+   - Skills to highlight
+   - Projects to highlight
+   - Certifications
+   - ATS recommendations
+
+8. Interview Preparation
+   - Technical topics
+   - Coding topics
+   - AI/ML questions
+   - HR questions
+
+9. Job Search Strategy
+   - Suitable job titles
+   - Types of companies
+   - LinkedIn strategy
+   - GitHub strategy
+   - Portfolio strategy
+
+10. Long-Term Career Roadmap
+   - 1 year
+   - 3 years
+   - 5 years
+
+11. Final Recommendation
+   Give a clear conclusion about the candidate's best career direction.
+
+Keep the advice realistic, practical and suitable for the candidate's
+current experience level.
+
+Use clear headings and bullet points.
 """
 
-    # Gemini response
-    with st.spinner("🤖 Gemini is analyzing your career..."):
+
+    # ========================================================
+    # CALL GEMINI
+    # ========================================================
+
+    with st.spinner("🤖 AI is analyzing your career profile..."):
 
         try:
 
@@ -175,266 +335,46 @@ Give practical and specific advice.
 
         except Exception as e:
 
-            st.error(f"Gemini Error: {e}")
+            st.error("❌ Error while generating the career report.")
+
+            st.exception(e)
+
             st.stop()
 
-    # Results
-    st.success("✅ Career analysis completed!")
+
+    # ========================================================
+    # DISPLAY REPORT
+    # ========================================================
 
     st.divider()
 
-    st.header("🎯 Your Career Dashboard")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            "Target Job",
-            target_role
-        )
-
-    with col2:
-        st.metric(
-            "Experience",
-            experience
-        )
-
-    with col3:
-        st.metric(
-            "AI Engine",
-            "Gemini"
-        )
-
-    st.divider()
-
-    st.header("🧠 AI Career Analysis")
+    st.header("📊 Your AI Career Navigation Report")
 
     st.markdown(result)
 
-    # Download
+
+    # ========================================================
+    # DOWNLOAD REPORT
+    # ========================================================
+
+    st.divider()
+
+    st.subheader("📥 Download Your Report")
+
     st.download_button(
         label="📥 Download Career Report",
         data=result,
         file_name="AI_Career_Navigator_Report.txt",
         mime="text/plain"
-=======
-import os
-import streamlit as st
-from dotenv import load_dotenv
-from google import genai
+    )
 
-# Load .env
-load_dotenv()
 
-# Get Gemini API key
-api_key = os.getenv("GEMINI_API_KEY")
-
-# Check API key
-if not api_key:
-    st.error("Gemini API key not found. Please check your .env file.")
-    st.stop()
-
-# Gemini
-client = genai.Client(api_key=api_key)
-
-# Page settings
-st.set_page_config(
-    page_title="AI Career Navigator",
-    page_icon="🚀",
-    layout="wide"
-)
-
-# Title
-st.title("🚀 AI Career Navigator")
-st.subheader("Navigate Your Career. Build Your Future.")
-
-st.write(
-    "AI-powered career guidance, skill-gap analysis "
-    "and personalized career roadmap."
-)
+# ============================================================
+# FOOTER
+# ============================================================
 
 st.divider()
 
-# Sidebar
-st.sidebar.header("👤 Your Profile")
-
-name = st.sidebar.text_input(
-    "Your Name"
+st.caption(
+    "🚀 AI Career Navigator | Built with Python, Streamlit and Google Gemini"
 )
-
-education = st.sidebar.text_input(
-    "Education",
-    placeholder="Example: MCA Generative AI"
-)
-
-skills = st.sidebar.text_area(
-    "Your Skills",
-    placeholder="Python, SQL, Machine Learning"
-)
-
-interests = st.sidebar.text_area(
-    "Your Interests",
-    placeholder="Generative AI, NLP, Computer Vision"
-)
-
-target_role = st.sidebar.text_input(
-    "Target Job",
-    placeholder="Example: AI Engineer"
-)
-
-experience = st.sidebar.selectbox(
-    "Experience",
-    [
-        "Student",
-        "Fresher",
-        "0-2 Years",
-        "2-5 Years"
-    ]
-)
-
-# Button
-analyze = st.sidebar.button(
-    "🚀 Analyze My Career"
-)
-
-# Home screen
-if not analyze:
-
-    st.info(
-        "👈 Enter your details on the left and "
-        "click **Analyze My Career**."
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            "🎯 Career",
-            "AI Powered"
-        )
-
-    with col2:
-        st.metric(
-            "🧠 Skill Analysis",
-            "Gemini"
-        )
-
-    with col3:
-        st.metric(
-            "🗺️ Roadmap",
-            "Personalized"
-        )
-
-# Analyze
-else:
-
-    if not name or not education or not skills or not target_role:
-
-        st.warning(
-            "Please enter Name, Education, Skills "
-            "and Target Job."
-        )
-
-        st.stop()
-
-    # Prompt for Gemini
-    prompt = f"""
-You are an expert AI career advisor.
-
-Candidate information:
-
-Name: {name}
-
-Education:
-{education}
-
-Experience:
-{experience}
-
-Current Skills:
-{skills}
-
-Interests:
-{interests}
-
-Target Job:
-{target_role}
-
-Create a personalized career plan.
-
-Give the answer using these sections:
-
-1. Career Assessment
-2. Career Match Percentage
-3. Current Strengths
-4. Skill Gaps
-5. Skills to Learn
-6. 6-Month Career Roadmap
-7. Recommended Projects
-8. Certifications
-9. Interview Preparation
-10. Job Application Strategy
-11. Suitable Job Roles
-12. Final Career Advice
-
-Give practical and specific advice.
-"""
-
-    # Gemini response
-    with st.spinner("🤖 Gemini is analyzing your career..."):
-
-        try:
-
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt
-            )
-
-            result = response.text
-
-        except Exception as e:
-
-            st.error(f"Gemini Error: {e}")
-            st.stop()
-
-    # Results
-    st.success("✅ Career analysis completed!")
-
-    st.divider()
-
-    st.header("🎯 Your Career Dashboard")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            "Target Job",
-            target_role
-        )
-
-    with col2:
-        st.metric(
-            "Experience",
-            experience
-        )
-
-    with col3:
-        st.metric(
-            "AI Engine",
-            "Gemini"
-        )
-
-    st.divider()
-
-    st.header("🧠 AI Career Analysis")
-
-    st.markdown(result)
-
-    # Download
-    st.download_button(
-        label="📥 Download Career Report",
-        data=result,
-        file_name="AI_Career_Navigator_Report.txt",
-        mime="text/plain"
->>>>>>> 60fc632de6a62287881059525ba065e75bb7ae4f
-    )
