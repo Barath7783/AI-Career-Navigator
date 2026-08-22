@@ -331,11 +331,6 @@ if not st.session_state.logged_in:
     )
 
     st.markdown(
-        '<div class="subtitle">REVERSE 2026</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
         '<div class="description">'
         'Your AI-Powered Career Planning Assistant'
         '</div>',
@@ -772,7 +767,7 @@ Make the advice practical and realistic.
             try:
 
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.6-flash",
                     contents=prompt
                 )
 
