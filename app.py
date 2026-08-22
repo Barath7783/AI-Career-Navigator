@@ -326,7 +326,7 @@ if "user_name" not in st.session_state:
 if not st.session_state.logged_in:
 
     st.markdown(
-        '<div class="main-title">🧭 AI CAREER NAVIGATOR</div>',
+        '<div class="main-title">AI CAREER NAVIGATOR</div>',
         unsafe_allow_html=True
     )
 
@@ -455,7 +455,7 @@ if not st.session_state.logged_in:
 # SIDEBAR
 # ============================================================
 
-st.sidebar.title("🧭 AI Career Navigator")
+st.sidebar.title("AI Career Navigator")
 
 st.sidebar.success(
     f"Welcome, {st.session_state.user_name}"
@@ -492,7 +492,7 @@ if st.sidebar.button("🚪 Logout"):
 # ============================================================
 
 st.markdown(
-    '<div class="main-title">🧭 AI CAREER NAVIGATOR</div>',
+    '<div class="main-title">AI CAREER NAVIGATOR</div>',
     unsafe_allow_html=True
 )
 
