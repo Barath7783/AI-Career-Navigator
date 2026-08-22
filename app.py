@@ -188,7 +188,7 @@ career_domain = st.selectbox(
 # ============================================================
 
 generate_report = st.button(
-    "🚀 Generate My AI Career Plan",
+    "🧭 Generate My AI Career Plan",
     type="primary",
     use_container_width=True
 )
