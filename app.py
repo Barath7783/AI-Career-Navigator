@@ -497,11 +497,6 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="subtitle">REVERSE 2026</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
     '<div class="description">'
     'Navigate Your Career. Build Your Future.'
     '</div>',
@@ -1256,7 +1251,7 @@ elif page == "💳 Subscription":
 
         st.subheader("⭐ Pro")
 
-        st.write("₹299 / month")
+        st.write("₹199 / month")
 
         st.write("✓ Advanced AI Assessment")
         st.write("✓ Resume ATS Analysis")
