@@ -304,7 +304,25 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+# ============================================================
+# GUEST ACCOUNT
+# ============================================================
 
+def create_guest_account():
+    """Create a temporary guest account."""
+    st.session_state.user_id = "guest"
+    st.session_state.user_name = "Guest User"
+    st.session_state.user_email = "guest@aicareernavigator.app"
+    st.session_state.is_guest = True
+    st.session_state.logged_in = True
+
+
+def guest_login():
+    st.session_state.user_id = "guest"
+    st.session_state.user_name = "Guest User"
+    st.session_state.user_email = "guest@aicareernavigator.app"
+    st.session_state.is_guest = True
+    st.session_state.logged_in = True
 # ============================================================
 # SESSION STATE
 # ============================================================
