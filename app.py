@@ -37,17 +37,53 @@ client = genai.Client(api_key=api_key)
 # HEADER
 # ============================================================
 
-st.title("🚀 AI Career Navigator")
+st.markdown(
+    """
+    <div style="text-align: center; padding: 10px 0 20px 0;">
+        <h1 style="
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff4b4b, #a855f7, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        ">
+            🚀 AI CAREER NAVIGATOR 🧭
+        </h1>
 
-st.subheader(
-    "Your AI-powered guide for skills, careers, jobs and learning paths"
+        <h2 style="
+            color: #00d9ff;
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 0;
+        ">
+            REVERSE 2026
+        </h2>
+
+        <p style="
+            font-size: 22px;
+            color: #d1d5db;
+        ">
+            Your AI-Powered Career Planning Assistant
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 st.markdown(
     """
-    **AI Career Navigator** analyzes your education, skills, interests
-    and career goals to create a personalized career roadmap.
-    """
+    <div style="
+        text-align: center;
+        font-size: 16px;
+        color: #b8c0cc;
+        margin-bottom: 25px;
+    ">
+        <b>AI Career Navigator</b> analyzes your education, skills,
+        interests and career goals to create a personalized career roadmap.
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 st.divider()
@@ -375,6 +411,16 @@ Use clear headings and bullet points.
 
 st.divider()
 
-st.caption(
-    "🚀 AI Career Navigator | Built with Python, Streamlit and Google Gemini"
+st.markdown(
+    """
+    <div style="
+        text-align: center;
+        padding: 20px 0;
+        font-size: 18px;
+        color: white;
+    ">
+        © 2026 Barath. All Rights Reserved.
+    </div>
+    """,
+    unsafe_allow_html=True
 )
