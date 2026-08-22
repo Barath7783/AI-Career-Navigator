@@ -304,34 +304,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-# 👥 GUEST ID - BEFORE LOGIN
-# ============================================================
 
-st.subheader("👥 Guest Account")
-
-st.write("Continue without creating an account.")
-
-guest_id = st.text_input(
-    "Guest ID",
-    placeholder="Enter Guest ID",
-    key="guest_id"
-)
-
-if st.button("👥 Continue as Guest", use_container_width=True):
-
-    if guest_id.strip():
-
-        st.session_state.logged_in = True
-        st.session_state.is_guest = True
-        st.session_state.user_id = guest_id.strip()
-        st.session_state.user_name = "Guest User"
-        st.session_state.user_email = f"{guest_id.strip()}@guest.local"
-
-        st.success(f"Welcome, Guest {guest_id.strip()}!")
-        st.rerun()
-
-    else:
-        st.error("Please enter a Guest ID.")
 # ============================================================
 # LOGIN / SIGNUP
 # ============================================================
