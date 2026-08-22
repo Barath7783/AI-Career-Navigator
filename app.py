@@ -37,7 +37,10 @@ client = genai.Client(api_key=api_key)
 # HEADER
 # ============================================================
 
-st.title("🚀 AI Career Navigator")
+st.markdown(
+    "<h1 style='text-align: center;'>🚀 AI Career Navigator</h1>",
+    unsafe_allow_html=True
+)
 
 st.subheader("Navigate Your Career. Build Your Future.")
 
