@@ -10,7 +10,7 @@ from google import genai
 # Page configuration
 st.set_page_config(
     page_title="AI Career Navigator",
-    page_icon="🚀",
+    page_icon="🧭",
     layout="wide"
 )
 
@@ -378,7 +378,7 @@ Use clear headings and bullet points.
 st.divider()
 
 st.caption(
-    "🚀 AI Career Navigator | Built with Python, Streamlit and Google Gemini"
+    "🧭 AI Career Navigator | Built with Python, Streamlit and Google Gemini"
 )
 st.markdown(
     "<p style='text-align:center;'>© 2026 Barath. All Rights Reserved.</p>",
