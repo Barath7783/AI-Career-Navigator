@@ -486,6 +486,25 @@ if st.sidebar.button("🚪 Logout"):
 
     st.rerun()
 
+st.sidebar.divider()
+
+st.sidebar.markdown("### 🔗 Connect with Me")
+
+st.sidebar.markdown(
+    """
+    <a href="https://www.linkedin.com/in/YOUR-LINKEDIN-USERNAME/"
+       target="_blank"
+       style="
+       text-decoration:none;
+       font-size:18px;
+       font-weight:600;
+       ">
+       💼 LinkedIn
+    </a>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # ============================================================
 # HEADER
