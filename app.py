@@ -783,7 +783,7 @@ Make the advice practical and realistic.
             try:
 
                 response = client.models.generate_content(
-                    model="gemini-3.6-flash",
+                    model="gemini-3.7-flash",
                     contents=prompt
                 )
 
@@ -1041,7 +1041,7 @@ Do not invent experience that is not present in the resume.
             try:
 
                 response = client.models.generate_content(
-                    model="gemini-3.6-flash",
+                    model="gemini-3.7-flash",
                     contents=prompt
                 )
 
@@ -1132,7 +1132,7 @@ Return:
         ):
 
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
+                model="gemini-3.7-flash",
                 contents=prompt
             )
 
@@ -1197,7 +1197,7 @@ For every month include:
         ):
 
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
+                model="gemini-3.7-flash",
                 contents=prompt
             )
 
@@ -1260,7 +1260,7 @@ Generate:
         ):
 
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
+                model="gemini-3.7-flash",
                 contents=prompt
             )
 
