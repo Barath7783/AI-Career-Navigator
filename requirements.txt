@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 streamlit
 google-genai
+=======
+streamlit
+google-genai
+>>>>>>> 60fc632de6a62287881059525ba065e75bb7ae4f
 python-dotenv
