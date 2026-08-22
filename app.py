@@ -38,7 +38,7 @@ client = genai.Client(api_key=api_key)
 # ============================================================
 
 st.markdown(
-    "<h1 style='text-align: center;'>🚀 AI Career Navigator</h1>",
+    "<h1 style='text-align: center;'>🧭 AI Career Navigator</h1>",
     unsafe_allow_html=True
 )
 
