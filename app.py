@@ -475,17 +475,6 @@ page = st.sidebar.radio(
         "💳 Subscription"
     ]
 )
-
-st.sidebar.divider()
-
-if st.sidebar.button("🚪 Logout"):
-
-    st.session_state.logged_in = False
-    st.session_state.user_id = None
-    st.session_state.user_name = ""
-
-    st.rerun()
-
 st.sidebar.divider()
 
 st.sidebar.markdown("### 🔗 Connect with Me")
@@ -504,6 +493,18 @@ st.sidebar.markdown(
     """,
     unsafe_allow_html=True
 )
+
+st.sidebar.divider()
+
+if st.sidebar.button("🚪 Logout"):
+
+    st.session_state.logged_in = False
+    st.session_state.user_id = None
+    st.session_state.user_name = ""
+
+    st.rerun()
+
+
 
 
 # ============================================================
